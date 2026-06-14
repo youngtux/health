@@ -403,21 +403,48 @@ function renderRoutine(){
       </div>
       <div class="day-exercises">
         ${exs.length===0?'<div style="padding:10px 0;color:var(--text2);font-size:13px">운동을 추가해보세요</div>':''}
-        ${exs.map(ex=>`<div class="ex-row">
-          <div>
-            <div class="ex-name">${ex.name}</div>
-            <div class="ex-detail">${ex.muscle}</div>
-            ${ex.tip?`<div class="ex-tip">💡 ${ex.tip}</div>`:''}
+        ${exs.map(ex=>`<div class="ex-row" style="flex-direction:column;align-items:flex-start">
+          <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+            <div>
+              <div class="ex-name">${ex.name}</div>
+              <div class="ex-detail">${ex.muscle}</div>
+              ${ex.tip?`<div class="ex-tip">💡 ${ex.tip}</div>`:''}
+            </div>
+            <div class="ex-actions">
+              <button class="log-btn" onclick="event.stopPropagation();goRecord('${ex.id}')">기록</button>
+              <button class="rm-btn" onclick="event.stopPropagation();removeFromRoutine(${day.id},'${ex.id}')">✕</button>
+            </div>
           </div>
-          <div class="ex-actions">
-            <button class="log-btn" onclick="event.stopPropagation();goRecord('${ex.id}')">기록</button>
-            <button class="rm-btn" onclick="event.stopPropagation();removeFromRoutine(${day.id},'${ex.id}')">✕</button>
-          </div>
+          <div id="rmedia-${ex.id}" style="width:100%;margin-top:6px"></div>
         </div>`).join('')}
         <button class="add-ex-to-routine" onclick="openAddToRoutineModal(${day.id})">+ 운동 추가</button>
       </div>
     </div>`;
   }).join('');
+  // 루틴 미디어 로딩
+  routine.forEach(day=>{
+    day.exercises.forEach(eid=>{
+      const ex=lib.find(e=>e.id===eid); if(!ex) return;
+      loadRoutineMedia(ex.id, ex.name);
+    });
+  });
+}
+
+function loadRoutineMedia(id, name){
+  const container=document.getElementById('rmedia-'+id);
+  if(!container||container.hasChildNodes()) return;
+  const vid=document.createElement('video');
+  vid.src='./images/'+encodeURIComponent(name)+'.mp4';
+  vid.controls=true; vid.playsInline=true;
+  vid.style.cssText='width:100%;border-radius:8px;display:block';
+  vid.oncanplay=function(){ if(!container.hasChildNodes()) container.appendChild(vid); };
+  vid.onerror=function(){
+    const img=document.createElement('img');
+    img.src='./images/'+encodeURIComponent(name)+'.jpg';
+    img.alt=name;
+    img.style.cssText='width:100%;border-radius:8px;display:block';
+    img.onload=function(){ if(!container.hasChildNodes()) container.appendChild(img); };
+  };
 }
 
 function toggleDay(id){ document.getElementById('dc-'+id).classList.toggle('open'); }
