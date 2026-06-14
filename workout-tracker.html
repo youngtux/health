@@ -538,15 +538,15 @@ function renderLibrary(){
             <button class="lib-delete-btn" onclick="deleteLibEx('${e.id}')">🗑</button>
           </div>
         </div>
-        <img src="./images/${encodeURIComponent(e.name)}.jpg"
-          alt="${e.name}"
-          style="width:100%;border-radius:8px;margin-top:10px;display:block"
-          onerror="this.style.display='none';document.getElementById('vid-${e.id}').style.display='block'"
-          onload="this.style.display='block'">
         <video id="vid-${e.id}" src="./images/${encodeURIComponent(e.name)}.mp4"
           controls playsinline
+          style="width:100%;border-radius:8px;margin-top:10px;display:block"
+          onerror="this.style.display='none';document.getElementById('img-${e.id}').style.display='block'"></video>
+        <img id="img-${e.id}" src="./images/${encodeURIComponent(e.name)}.jpg"
+          alt="${e.name}"
           style="width:100%;border-radius:8px;margin-top:10px;display:none"
-          onerror="this.style.display='none'"></video>
+          onerror="this.style.display='none'"
+          onload="this.style.display='block'">
       </div>`).join('')}`).join('');
 }
 
