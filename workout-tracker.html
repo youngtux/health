@@ -526,16 +526,23 @@ function renderLibrary(){
   container.innerHTML=muscles.map(m=>`
     <div class="muscle-label">${m}</div>
     ${lib.filter(e=>e.muscle===m).map(e=>`
-      <div class="lib-item" style="align-items:flex-start">
-        <div style="flex:1;min-width:0">
-          <div class="lib-item-name">${e.name}</div>
-          ${e.tip?`<div class="lib-item-tip">💡 ${e.tip}</div>`:''}
-          ${e.comment?`<div class="lib-item-tip" style="color:var(--success,#00e5a0);margin-top:3px">📝 ${e.comment}</div>`:''}
+      <div class="lib-item" style="align-items:flex-start;flex-direction:column;gap:0">
+        <div style="display:flex;align-items:flex-start;width:100%">
+          <div style="flex:1;min-width:0">
+            <div class="lib-item-name">${e.name}</div>
+            ${e.tip?`<div class="lib-item-tip">💡 ${e.tip}</div>`:''}
+            ${e.comment?`<div class="lib-item-tip" style="color:var(--success,#00e5a0);margin-top:3px">📝 ${e.comment}</div>`:''}
+          </div>
+          <div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px">
+            <button class="lib-delete-btn" style="color:var(--text2)" onclick="openEditExModal('${e.id}')">✏️</button>
+            <button class="lib-delete-btn" onclick="deleteLibEx('${e.id}')">🗑</button>
+          </div>
         </div>
-        <div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px">
-          <button class="lib-delete-btn" style="color:var(--text2)" onclick="openEditExModal('${e.id}')">✏️</button>
-          <button class="lib-delete-btn" onclick="deleteLibEx('${e.id}')">🗑</button>
-        </div>
+        <img src="./images/${encodeURIComponent(e.name)}.jpg"
+          alt="${e.name}"
+          style="width:100%;border-radius:8px;margin-top:10px;display:block"
+          onerror="this.style.display='none'"
+          onload="this.style.display='block'">
       </div>`).join('')}`).join('');
 }
 
