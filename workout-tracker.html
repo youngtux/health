@@ -538,17 +538,27 @@ function renderLibrary(){
             <button class="lib-delete-btn" onclick="deleteLibEx('${e.id}')">🗑</button>
           </div>
         </div>
-        <video id="vid-${e.id}" src="./images/${encodeURIComponent(e.name)}.mp4"
-          controls playsinline
-          style="width:100%;border-radius:8px;margin-top:10px;display:none"
-          oncanplay="this.style.display='block'"
-          onerror="this.style.display='none';document.getElementById('img-${e.id}').style.display='block'"></video>
-        <img id="img-${e.id}" src="./images/${encodeURIComponent(e.name)}.jpg"
-          alt="${e.name}"
-          style="width:100%;border-radius:8px;margin-top:10px;display:none"
-          onerror="this.style.display='none'"
-          onload="this.style.display='block'">
+        <div id="media-${e.id}" style="margin-top:8px"></div>
       </div>`).join('')}`).join('');
+  // 미디어 로딩
+  lib.forEach(e=>loadExMedia(e.id, e.name));
+}
+
+function loadExMedia(id, name){
+  const container=document.getElementById('media-'+id);
+  if(!container) return;
+  const vid=document.createElement('video');
+  vid.src='./images/'+encodeURIComponent(name)+'.mp4';
+  vid.controls=true; vid.playsInline=true;
+  vid.style.cssText='width:100%;border-radius:8px;display:block';
+  vid.oncanplay=function(){ if(!container.hasChildNodes()) container.appendChild(vid); };
+  vid.onerror=function(){
+    const img=document.createElement('img');
+    img.src='./images/'+encodeURIComponent(name)+'.jpg';
+    img.alt=name;
+    img.style.cssText='width:100%;border-radius:8px;display:block';
+    img.onload=function(){ if(!container.hasChildNodes()) container.appendChild(img); };
+  };
 }
 
 let editingExId=null;
