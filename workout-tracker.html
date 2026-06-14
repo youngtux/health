@@ -926,11 +926,15 @@ function renderStats(){
     const ex=lib.find(e=>e.id===eid);
     const body=ex?.body||'upper';
     if(Array.isArray(data)) bodyCount[body]=(bodyCount[body]||0)+data.length;
-    else bodyCount[body]=(bodyCount[body]||0)+1;
+    else bodyCount[body]=(bodyCount[body]||0)+Math.max(1,Math.round((Number(data.duration)||0)/10));
   }));
   const total=Object.values(bodyCount).reduce((a,b)=>a+b,0)||1;
   const labels={upper:'상체',lower:'하체',cardio:'유산소'};
   const colors={upper:'#7c3aed',lower:'#f59e0b',cardio:'#0ea5e9'};
+  // 유산소 실제 분 합계
+  const cardioDuration=monthKeys.reduce((s,k)=>s+Object.entries(allRec[k].exercises)
+    .filter(([eid,v])=>!Array.isArray(v))
+    .reduce((a,[,d])=>a+(Number(d.duration)||0),0),0);
   const advice=()=>{
     const up=bodyCount.upper/total, lo=bodyCount.lower/total;
     if(lo<0.2) return '⚠️ 하체 운동이 부족해요! 하체도 챙겨봐요.';
@@ -942,10 +946,11 @@ function renderStats(){
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px">
       ${['upper','lower','cardio'].map(b=>{
         const pct=Math.round(bodyCount[b]/total*100);
+        const detail=b==='cardio'?`${cardioDuration}분 (${bodyCount[b]}세트 환산)`:`${bodyCount[b]}세트`;
         return `<div style="margin-bottom:10px">
           <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">
             <span style="font-weight:600">${labels[b]}</span>
-            <span style="color:var(--text2)">${bodyCount[b]}세트 · ${pct}%</span>
+            <span style="color:var(--text2)">${detail} · ${pct}%</span>
           </div>
           <div style="background:var(--surface2);border-radius:6px;height:10px;overflow:hidden">
             <div style="background:${colors[b]};width:${pct}%;height:100%;border-radius:6px;transition:width 0.4s"></div>
