@@ -540,7 +540,8 @@ function renderLibrary(){
         </div>
         <video id="vid-${e.id}" src="./images/${encodeURIComponent(e.name)}.mp4"
           controls playsinline
-          style="width:100%;border-radius:8px;margin-top:10px;display:block"
+          style="width:100%;border-radius:8px;margin-top:10px;display:none"
+          oncanplay="this.style.display='block'"
           onerror="this.style.display='none';document.getElementById('img-${e.id}').style.display='block'"></video>
         <img id="img-${e.id}" src="./images/${encodeURIComponent(e.name)}.jpg"
           alt="${e.name}"
