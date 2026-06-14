@@ -541,8 +541,12 @@ function renderLibrary(){
         <img src="./images/${encodeURIComponent(e.name)}.jpg"
           alt="${e.name}"
           style="width:100%;border-radius:8px;margin-top:10px;display:block"
-          onerror="this.style.display='none'"
+          onerror="this.style.display='none';document.getElementById('vid-${e.id}').style.display='block'"
           onload="this.style.display='block'">
+        <video id="vid-${e.id}" src="./images/${encodeURIComponent(e.name)}.mp4"
+          controls playsinline
+          style="width:100%;border-radius:8px;margin-top:10px;display:none"
+          onerror="this.style.display='none'"></video>
       </div>`).join('')}`).join('');
 }
 
