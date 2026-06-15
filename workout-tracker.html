@@ -179,6 +179,43 @@
     <div class="date-display" id="dateDisplay"></div>
     <button class="date-nav-btn" onclick="changeDate(1)">&#8250;</button>
   </div>
+
+  <!-- 설정 영역 -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <span style="font-size:13px;font-weight:600">⏱ 인터벌 타이머</span>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <span style="font-size:12px;color:var(--text2)" id="timerToggleLabel">OFF</span>
+        <div id="timerToggle" onclick="toggleTimer()" style="width:40px;height:22px;border-radius:11px;background:var(--border);position:relative;cursor:pointer;transition:background 0.2s">
+          <div id="timerThumb" style="width:18px;height:18px;border-radius:9px;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s"></div>
+        </div>
+      </label>
+    </div>
+    <div id="timerSetting" style="display:none;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;color:var(--text2);white-space:nowrap">휴식 시간</span>
+        <input id="timerSeconds" type="number" class="set-input" style="width:80px;text-align:center" placeholder="90" min="10" max="600" onchange="saveTimerSettings()">
+        <span style="font-size:12px;color:var(--text2)">초</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:13px;font-weight:600">📋 운동 정보 표시</span>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <span style="font-size:12px;color:var(--text2)" id="infoToggleLabel">OFF</span>
+        <div id="infoToggle" onclick="toggleInfo()" style="width:40px;height:22px;border-radius:11px;background:var(--border);position:relative;cursor:pointer;transition:background 0.2s">
+          <div id="infoThumb" style="width:18px;height:18px;border-radius:9px;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s"></div>
+        </div>
+      </label>
+    </div>
+  </div>
+
+  <!-- 타이머 오버레이 -->
+  <div id="timerOverlay" style="display:none;background:var(--surface2);border:2px solid var(--accent);border-radius:12px;padding:14px;margin-bottom:12px;text-align:center">
+    <div style="font-size:11px;color:var(--text2);margin-bottom:4px">다음 세트까지</div>
+    <div id="timerDisplay" style="font-size:36px;font-weight:900;color:var(--accent);letter-spacing:-1px">00:00</div>
+    <button onclick="stopTimer()" style="margin-top:8px;background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:5px 14px;font-size:12px;cursor:pointer">건너뛰기</button>
+  </div>
+
   <button class="select-ex-btn" onclick="openSelectExModal()">＋ 운동 선택하기</button>
   <div id="recordExercises"></div>
   <button class="save-record-btn" onclick="saveRecord()">✅ 오늘 운동 저장</button>
@@ -667,6 +704,101 @@ function deleteLibEx(id){
 }
 
 // ─────────────────────────────────────────
+// 타이머 & 설정
+// ─────────────────────────────────────────
+let timerInterval=null;
+let timerOn=false, infoOn=false;
+
+function loadRecordSettings(){
+  try{
+    const s=JSON.parse(localStorage.getItem('recordSettings')||'{}');
+    timerOn=s.timerOn||false;
+    infoOn=s.infoOn||false;
+    document.getElementById('timerSeconds').value=s.timerSeconds||90;
+    applyTimerToggleUI();
+    applyInfoToggleUI();
+  }catch{}
+}
+
+function saveTimerSettings(){
+  const s={timerOn,infoOn,timerSeconds:Number(document.getElementById('timerSeconds').value)||90};
+  localStorage.setItem('recordSettings',JSON.stringify(s));
+}
+
+function toggleTimer(){
+  timerOn=!timerOn;
+  applyTimerToggleUI();
+  saveTimerSettings();
+}
+
+function applyTimerToggleUI(){
+  const tog=document.getElementById('timerToggle');
+  const thumb=document.getElementById('timerThumb');
+  const label=document.getElementById('timerToggleLabel');
+  const setting=document.getElementById('timerSetting');
+  if(timerOn){
+    tog.style.background='var(--accent)';
+    thumb.style.left='20px';
+    label.textContent='ON'; label.style.color='var(--accent)';
+    setting.style.display='block';
+  } else {
+    tog.style.background='var(--border)';
+    thumb.style.left='2px';
+    label.textContent='OFF'; label.style.color='var(--text2)';
+    setting.style.display='none';
+    stopTimer();
+  }
+}
+
+function toggleInfo(){
+  infoOn=!infoOn;
+  applyInfoToggleUI();
+  saveTimerSettings();
+  renderRecord();
+}
+
+function applyInfoToggleUI(){
+  const tog=document.getElementById('infoToggle');
+  const thumb=document.getElementById('infoThumb');
+  const label=document.getElementById('infoToggleLabel');
+  if(infoOn){
+    tog.style.background='var(--accent)';
+    thumb.style.left='20px';
+    label.textContent='ON'; label.style.color='var(--accent)';
+  } else {
+    tog.style.background='var(--border)';
+    thumb.style.left='2px';
+    label.textContent='OFF'; label.style.color='var(--text2)';
+  }
+}
+
+function startTimer(){
+  if(!timerOn) return;
+  stopTimer();
+  const total=Number(document.getElementById('timerSeconds').value)||90;
+  let remaining=total;
+  document.getElementById('timerOverlay').style.display='block';
+  updateTimerDisplay(remaining);
+  timerInterval=setInterval(()=>{
+    remaining--;
+    updateTimerDisplay(remaining);
+    if(remaining<=0){ stopTimer(); showToast('⏱ 인터벌 완료!'); }
+  },1000);
+}
+
+function stopTimer(){
+  if(timerInterval){ clearInterval(timerInterval); timerInterval=null; }
+  const overlay=document.getElementById('timerOverlay');
+  if(overlay) overlay.style.display='none';
+}
+
+function updateTimerDisplay(sec){
+  const m=String(Math.floor(sec/60)).padStart(2,'0');
+  const s=String(Math.max(0,sec%60)).padStart(2,'0');
+  document.getElementById('timerDisplay').textContent=`${m}:${s}`;
+}
+
+// ─────────────────────────────────────────
 // 기록
 // ─────────────────────────────────────────
 let currentDate=new Date(), recordExIds=[], modalExIds=[];
@@ -726,6 +858,11 @@ function renderRecord(){
           <button class="rec-rm-btn" onclick="removeRecEx('${eid}')">✕</button>
         </div>
       </div>
+      ${infoOn&&(ex.tip||ex.comment)?`<div style="padding:6px 14px;border-bottom:1px solid var(--border)">
+        ${ex.tip?`<div class="ex-tip">💡 ${ex.tip}</div>`:''}
+        ${ex.comment?`<div class="ex-tip" style="color:var(--success,#00e5a0)">📝 ${ex.comment}</div>`:''}
+      </div>`:''}
+      ${infoOn?`<div id="recmedia-${sid(eid)}" style="padding:0 14px 8px;border-bottom:1px solid var(--border)"></div>`:''}
       <div class="sets-container" id="sc-${sid(eid)}">
         <div style="display:grid;grid-template-columns:32px 1fr 1fr auto;gap:8px;padding:4px 0 0">
           <div></div><div class="input-col-label">무게(kg)</div><div class="input-col-label">횟수</div><div></div>
@@ -735,6 +872,25 @@ function renderRecord(){
       </div>
     </div>`;
   }).filter(Boolean).join('');
+  // 운동 정보 on이면 미디어 로딩
+  if(infoOn){
+    recordExIds.forEach(eid=>{
+      const ex=lib.find(e=>e.id===eid); if(!ex) return;
+      const container=document.getElementById('recmedia-'+sid(eid)); if(!container) return;
+      const vid=document.createElement('video');
+      vid.src='./images/'+encodeURIComponent(ex.name)+'.mp4';
+      vid.controls=true; vid.playsInline=true;
+      vid.style.cssText='width:100%;border-radius:8px;display:block;margin-top:6px';
+      vid.oncanplay=function(){ if(!container.hasChildNodes()) container.appendChild(vid); };
+      vid.onerror=function(){
+        const img=document.createElement('img');
+        img.src='./images/'+encodeURIComponent(ex.name)+'.jpg';
+        img.alt=ex.name;
+        img.style.cssText='width:100%;border-radius:8px;display:block;margin-top:6px';
+        img.onload=function(){ if(!container.hasChildNodes()) container.appendChild(img); };
+      };
+    });
+  }
 }
 
 function removeRecEx(eid){ recordExIds=recordExIds.filter(id=>id!==eid); renderRecord(); }
@@ -790,6 +946,7 @@ function addSet(exId){
   }
   const d=document.createElement('div'); d.innerHTML=setRowHTML(exId,rows.length,weight,reps);
   c.insertBefore(d.firstElementChild,addBtn);
+  startTimer();
 }
 
 function removeSet(exId,idx){
@@ -1203,6 +1360,7 @@ function exportExcel(){
 // Init
 // ─────────────────────────────────────────
 updateMuscleOptions();
+loadRecordSettings();
 renderRoutine();
 renderRecord();
 updateStreak();
