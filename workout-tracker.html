@@ -238,11 +238,16 @@
 
 <!-- 통계 -->
 <div id="page-stats" class="page">
-  <p class="sec">이번 달 현황</p>
+  <div class="date-selector" style="margin-bottom:16px">
+    <button class="date-nav-btn" onclick="changeStatsMonth(-1)">&#8249;</button>
+    <div class="date-display" id="statsMonthDisplay"></div>
+    <button class="date-nav-btn" onclick="changeStatsMonth(1)">&#8250;</button>
+  </div>
+  <p class="sec">현황</p>
   <div class="stats-grid" id="statsGrid"></div>
-  <p class="sec">이번 주</p>
+  <p class="sec">해당 주간</p>
   <div class="week-heatmap" id="weekHeatmap"></div>
-  <p class="sec">운동 균형 분석 (이번 달)</p>
+  <p class="sec">운동 균형 분석</p>
   <div id="balanceChart"></div>
   <p class="sec">운동별 최고 무게</p>
   <div id="prList"></div>
@@ -1131,8 +1136,23 @@ function deleteRecord(key){
 // ─────────────────────────────────────────
 // 통계
 // ─────────────────────────────────────────
+let statsMonth=new Date();
+
+function changeStatsMonth(delta){
+  statsMonth=new Date(statsMonth.getFullYear(), statsMonth.getMonth()+delta, 1);
+  renderStats();
+}
+
 function renderStats(){
-  const allRec=loadRecords(), lib=loadLibrary(), keys=Object.keys(allRec), now=new Date();
+  const allRec=loadRecords(), lib=loadLibrary(), keys=Object.keys(allRec);
+  const now=statsMonth;
+  const monthStr=`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}`;
+  const isCurrentMonth=monthStr===new Date().toISOString().slice(0,7).replace('-','.');
+
+  // 월 표시
+  const el=document.getElementById('statsMonthDisplay');
+  if(el) el.textContent=monthStr+(isCurrentMonth?' (이번 달)':'');
+
   const monthKeys=keys.filter(k=>k.startsWith(now.toISOString().slice(0,7)));
   // 유산소(객체)는 제외하고 근력(배열)만 세트 계산
   const totalSetsMonth=monthKeys.reduce((s,k)=>s+Object.values(allRec[k].exercises).filter(v=>Array.isArray(v)).reduce((a,sets)=>a+sets.length,0),0);
@@ -1141,8 +1161,10 @@ function renderStats(){
     <div class="stat-card"><div class="stat-value">${monthKeys.length}</div><div class="stat-label">이번 달 운동</div></div>
     <div class="stat-card"><div class="stat-value">${totalSetsMonth}</div><div class="stat-label">이번 달 총 세트</div></div>
     <div class="stat-card"><div class="stat-value">${calcStreak(allRec)}</div><div class="stat-label">🔥 연속 운동일</div></div>`;
-  const dn=['일','월','화','수','목','금','토'], sow=new Date(now);
-  sow.setDate(now.getDate()-now.getDay());
+  const dn=['일','월','화','수','목','금','토'];
+  // 선택된 월의 마지막 날 기준 주간 표시 (이번 달이면 오늘 기준)
+  const refDate=isCurrentMonth?new Date():new Date(now.getFullYear(),now.getMonth()+1,0);
+  const sow=new Date(refDate); sow.setDate(refDate.getDate()-refDate.getDay());
   document.getElementById('weekHeatmap').innerHTML=Array.from({length:7},(_,i)=>{
     const d=new Date(sow); d.setDate(sow.getDate()+i);
     return `<div class="hm-day ${allRec[dateKey(d)]?'active':''}">${dn[i]}</div>`;
