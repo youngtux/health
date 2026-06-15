@@ -764,7 +764,7 @@ function applyInfoToggleUI(){
   }
 }
 
-function startTimer(){
+function startTimer(container){
   if(!timerOn) return;
   stopTimer();
   const total=Number(document.getElementById('timerSeconds').value)||90;
@@ -773,18 +773,14 @@ function startTimer(){
   // 기존 타이머 박스 제거
   document.querySelectorAll('.inline-timer').forEach(el=>el.remove());
 
-  // 마지막으로 세트 추가된 컨테이너 찾기 (가장 최근 add-set-btn 부모)
-  const allSets=document.querySelectorAll('.sets-container');
-  const lastContainer=allSets[allSets.length-1];
-  if(!lastContainer) return;
-
+  if(!container) return;
   const timerBox=document.createElement('div');
   timerBox.className='inline-timer';
   timerBox.style.cssText='text-align:center;background:var(--surface2);border:2px solid var(--accent);border-radius:12px;padding:14px;margin:6px 0;';
   timerBox.innerHTML=`<div style="font-size:11px;color:var(--text2);margin-bottom:4px">다음 세트까지</div><div class="inline-timer-display" style="font-size:36px;font-weight:900;color:var(--accent);letter-spacing:-1px">00:00</div><button onclick="stopTimer()" style="margin-top:8px;background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:5px 14px;font-size:12px;cursor:pointer">건너뛰기</button>`;
 
-  const addBtn=lastContainer.querySelector('.add-set-btn');
-  lastContainer.insertBefore(timerBox, addBtn);
+  const addBtn=container.querySelector('.add-set-btn');
+  container.insertBefore(timerBox, addBtn);
 
   updateInlineTimer(remaining);
   timerInterval=setInterval(()=>{
@@ -958,7 +954,7 @@ function addSet(exId){
   }
   const d=document.createElement('div'); d.innerHTML=setRowHTML(exId,rows.length,weight,reps);
   c.insertBefore(d.firstElementChild,addBtn);
-  startTimer();
+  startTimer(c);
 }
 
 function removeSet(exId,idx){
