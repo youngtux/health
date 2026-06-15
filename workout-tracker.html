@@ -409,6 +409,7 @@ function renderRoutine(){
               <div class="ex-name">${ex.name}</div>
               <div class="ex-detail">${ex.muscle}</div>
               ${ex.tip?`<div class="ex-tip">💡 ${ex.tip}</div>`:''}
+              ${ex.comment?`<div class="ex-tip" style="color:var(--success,#00e5a0)">📝 ${ex.comment}</div>`:''}
             </div>
             <div class="ex-actions">
               <button class="log-btn" onclick="event.stopPropagation();goRecord('${ex.id}')">기록</button>
