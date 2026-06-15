@@ -924,7 +924,13 @@ function toggleMSel(id){
   const chk=document.getElementById('mc-'+id); if(chk) chk.textContent=sel?'✓':'';
 }
 
-function confirmSelectEx(){ recordExIds=[...modalExIds]; closeModal('modalSelectEx'); renderRecord(); }
+function confirmSelectEx(){
+  // 새로 추가된 운동은 앞에, 기존 운동은 뒤에
+  const newIds=modalExIds.filter(id=>!recordExIds.includes(id));
+  const existingIds=recordExIds.filter(id=>modalExIds.includes(id));
+  recordExIds=[...newIds,...existingIds];
+  closeModal('modalSelectEx'); renderRecord();
+}
 
 function setRowHTML(exId,idx,weight='',reps=''){
   return `<div class="set-row" id="sr-${sid(exId)}-${idx}">
