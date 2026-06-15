@@ -704,7 +704,20 @@ function renderRecord(){
         </div>
       </div>`;
     }
-    const savedSets=existing?.exercises[eid]||[{weight:'',reps:''}];
+    // 오늘 기록이 없으면 이전 기록의 마지막 세트값을 초기값으로
+    let savedSets;
+    if(existing?.exercises[eid]){
+      savedSets=existing.exercises[eid];
+    } else {
+      const prevKeys=Object.keys(allRec).filter(k=>k<key&&allRec[k].exercises[eid]&&Array.isArray(allRec[k].exercises[eid])).sort((a,b)=>b.localeCompare(a));
+      if(prevKeys.length){
+        const prevSets=allRec[prevKeys[0]].exercises[eid];
+        const lastSet=prevSets[prevSets.length-1];
+        savedSets=[{weight:lastSet.weight,reps:lastSet.reps}];
+      } else {
+        savedSets=[{weight:'',reps:''}];
+      }
+    }
     return `<div class="record-exercise">
       <div class="rec-ex-header">
         <span>${ex.name}</span>
