@@ -208,13 +208,6 @@
     </div>
   </div>
 
-  <!-- 타이머 오버레이 -->
-  <div id="timerOverlay" style="display:none;background:var(--surface2);border:2px solid var(--accent);border-radius:12px;padding:14px;margin-bottom:12px;text-align:center">
-    <div style="font-size:11px;color:var(--text2);margin-bottom:4px">다음 세트까지</div>
-    <div id="timerDisplay" style="font-size:36px;font-weight:900;color:var(--accent);letter-spacing:-1px">00:00</div>
-    <button onclick="stopTimer()" style="margin-top:8px;background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:5px 14px;font-size:12px;cursor:pointer">건너뛰기</button>
-  </div>
-
   <button class="select-ex-btn" onclick="openSelectExModal()">＋ 운동 선택하기</button>
   <div id="recordExercises"></div>
   <button class="save-record-btn" onclick="saveRecord()">✅ 오늘 운동 저장</button>
@@ -776,25 +769,40 @@ function startTimer(){
   stopTimer();
   const total=Number(document.getElementById('timerSeconds').value)||90;
   let remaining=total;
-  document.getElementById('timerOverlay').style.display='block';
-  updateTimerDisplay(remaining);
+
+  // 기존 타이머 박스 제거
+  document.querySelectorAll('.inline-timer').forEach(el=>el.remove());
+
+  // 마지막으로 세트 추가된 컨테이너 찾기 (가장 최근 add-set-btn 부모)
+  const allSets=document.querySelectorAll('.sets-container');
+  const lastContainer=allSets[allSets.length-1];
+  if(!lastContainer) return;
+
+  const timerBox=document.createElement('div');
+  timerBox.className='inline-timer';
+  timerBox.style.cssText='text-align:center;background:var(--surface2);border:2px solid var(--accent);border-radius:12px;padding:14px;margin:6px 0;';
+  timerBox.innerHTML=`<div style="font-size:11px;color:var(--text2);margin-bottom:4px">다음 세트까지</div><div class="inline-timer-display" style="font-size:36px;font-weight:900;color:var(--accent);letter-spacing:-1px">00:00</div><button onclick="stopTimer()" style="margin-top:8px;background:none;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:5px 14px;font-size:12px;cursor:pointer">건너뛰기</button>`;
+
+  const addBtn=lastContainer.querySelector('.add-set-btn');
+  lastContainer.insertBefore(timerBox, addBtn);
+
+  updateInlineTimer(remaining);
   timerInterval=setInterval(()=>{
     remaining--;
-    updateTimerDisplay(remaining);
+    updateInlineTimer(remaining);
     if(remaining<=0){ stopTimer(); showToast('⏱ 인터벌 완료!'); }
   },1000);
 }
 
-function stopTimer(){
-  if(timerInterval){ clearInterval(timerInterval); timerInterval=null; }
-  const overlay=document.getElementById('timerOverlay');
-  if(overlay) overlay.style.display='none';
-}
-
-function updateTimerDisplay(sec){
+function updateInlineTimer(sec){
   const m=String(Math.floor(sec/60)).padStart(2,'0');
   const s=String(Math.max(0,sec%60)).padStart(2,'0');
-  document.getElementById('timerDisplay').textContent=`${m}:${s}`;
+  document.querySelectorAll('.inline-timer-display').forEach(el=>el.textContent=`${m}:${s}`);
+}
+
+function stopTimer(){
+  if(timerInterval){ clearInterval(timerInterval); timerInterval=null; }
+  document.querySelectorAll('.inline-timer').forEach(el=>el.remove());
 }
 
 // ─────────────────────────────────────────
@@ -924,10 +932,9 @@ function toggleMSel(id){
 }
 
 function confirmSelectEx(){
-  // 새로 추가된 운동은 앞에, 기존 운동은 뒤에
+  const keptIds=recordExIds.filter(id=>modalExIds.includes(id));
   const newIds=modalExIds.filter(id=>!recordExIds.includes(id));
-  const existingIds=recordExIds.filter(id=>modalExIds.includes(id));
-  recordExIds=[...newIds,...existingIds];
+  recordExIds=[...keptIds,...newIds];
   closeModal('modalSelectEx'); renderRecord();
 }
 
