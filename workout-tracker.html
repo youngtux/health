@@ -245,8 +245,8 @@
   </div>
   <p class="sec">현황</p>
   <div class="stats-grid" id="statsGrid"></div>
-  <p class="sec">해당 주간</p>
-  <div class="week-heatmap" id="weekHeatmap"></div>
+  <p class="sec">달력</p>
+  <div id="monthCalendar" style="margin-bottom:16px"></div>
   <p class="sec">운동 균형 분석</p>
   <div id="balanceChart"></div>
   <p class="sec">운동별 최고 무게</p>
@@ -1151,24 +1151,41 @@ function renderStats(){
 
   // 월 표시
   const el=document.getElementById('statsMonthDisplay');
-  if(el) el.textContent=monthStr+(isCurrentMonth?' (이번 달)':'');
+  if(el) el.textContent=monthStr;
 
-  const monthKeys=keys.filter(k=>k.startsWith(now.toISOString().slice(0,7)));
-  // 유산소(객체)는 제외하고 근력(배열)만 세트 계산
+  const monthPrefix=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const monthKeys=keys.filter(k=>k.startsWith(monthPrefix));
   const totalSetsMonth=monthKeys.reduce((s,k)=>s+Object.values(allRec[k].exercises).filter(v=>Array.isArray(v)).reduce((a,sets)=>a+sets.length,0),0);
   document.getElementById('statsGrid').innerHTML=`
     <div class="stat-card"><div class="stat-value">${keys.length}</div><div class="stat-label">총 운동 횟수</div></div>
-    <div class="stat-card"><div class="stat-value">${monthKeys.length}</div><div class="stat-label">이번 달 운동</div></div>
-    <div class="stat-card"><div class="stat-value">${totalSetsMonth}</div><div class="stat-label">이번 달 총 세트</div></div>
+    <div class="stat-card"><div class="stat-value">${monthKeys.length}</div><div class="stat-label">해당 월 운동</div></div>
+    <div class="stat-card"><div class="stat-value">${totalSetsMonth}</div><div class="stat-label">해당 월 총 세트</div></div>
     <div class="stat-card"><div class="stat-value">${calcStreak(allRec)}</div><div class="stat-label">🔥 연속 운동일</div></div>`;
-  const dn=['일','월','화','수','목','금','토'];
-  // 선택된 월의 마지막 날 기준 주간 표시 (이번 달이면 오늘 기준)
-  const refDate=isCurrentMonth?new Date():new Date(now.getFullYear(),now.getMonth()+1,0);
-  const sow=new Date(refDate); sow.setDate(refDate.getDate()-refDate.getDay());
-  document.getElementById('weekHeatmap').innerHTML=Array.from({length:7},(_,i)=>{
-    const d=new Date(sow); d.setDate(sow.getDate()+i);
-    return `<div class="hm-day ${allRec[dateKey(d)]?'active':''}">${dn[i]}</div>`;
-  }).join('');
+  // 월간 달력
+  const calEl=document.getElementById('monthCalendar');
+  const year=now.getFullYear(), month=now.getMonth();
+  const firstDay=new Date(year,month,1).getDay();
+  const lastDate=new Date(year,month+1,0).getDate();
+  const dn2=['일','월','화','수','목','금','토'];
+  let calHtml=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px">`;
+  calHtml+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px">`;
+  dn2.forEach((d,i)=>{ calHtml+=`<div style="text-align:center;font-size:11px;font-weight:700;color:${i===0?'#ef4444':i===6?'#0ea5e9':'var(--text2)'};padding:4px 0">${d}</div>`; });
+  calHtml+=`</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">`;
+  // 빈 칸
+  for(let i=0;i<firstDay;i++) calHtml+=`<div></div>`;
+  // 날짜
+  for(let d=1;d<=lastDate;d++){
+    const key=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const hasRecord=!!allRec[key];
+    const dow=(firstDay+d-1)%7;
+    const isToday=key===dateKey(new Date());
+    calHtml+=`<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:12px;font-weight:${hasRecord?'700':'400'};
+      background:${hasRecord?'var(--accent)':isToday?'var(--surface2)':'none'};
+      color:${hasRecord?'#000':isToday?'var(--text)':dow===0?'#ef4444':dow===6?'#0ea5e9':'var(--text2)'};
+      border:${isToday&&!hasRecord?'1px solid var(--border)':'none'}">${d}</div>`;
+  }
+  calHtml+=`</div></div>`;
+  calEl.innerHTML=calHtml;
   // 균형 분석
   const balanceEl=document.getElementById('balanceChart');
   const bodyCount={upper:0,lower:0,cardio:0};
