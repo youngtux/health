@@ -356,6 +356,7 @@
     <select class="modal-select" id="editExMuscle"></select>
     <input class="modal-input" id="editExTip" placeholder="팁 (선택사항)">
     <textarea class="modal-input" id="editExComment" placeholder="코멘트 (예: 어깨 부상 주의, 그립 넓게)" rows="3" style="resize:none;line-height:1.5"></textarea>
+    <input class="modal-input" id="editExLink" placeholder="링크 (예: https://youtube.com/...)">
     <button class="modal-submit" onclick="submitEditEx()">저장</button>
   </div>
 </div>
@@ -604,6 +605,7 @@ function renderLibrary(){
             ${e.tip?`<div class="lib-item-tip">💡 ${e.tip}</div>`:''}
           </div>
           <div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px">
+            ${e.link?`<button class="lib-delete-btn" style="color:#0ea5e9" onclick="window.open('${e.link}','_blank')">🔗</button>`:''}
             <button class="lib-delete-btn" style="color:var(--text2)" onclick="openEditExModal('${e.id}')">✏️</button>
             <button class="lib-delete-btn" onclick="deleteLibEx('${e.id}')">🗑</button>
           </div>
@@ -643,6 +645,7 @@ function openEditExModal(id){
   document.getElementById('editExMuscle').value=ex.muscle;
   document.getElementById('editExTip').value=ex.tip||'';
   document.getElementById('editExComment').value=ex.comment||'';
+  document.getElementById('editExLink').value=ex.link||'';
   openModal('modalEditEx');
 }
 
@@ -663,6 +666,7 @@ function submitEditEx(){
   ex.muscle=document.getElementById('editExMuscle').value;
   ex.tip=document.getElementById('editExTip').value.trim();
   ex.comment=document.getElementById('editExComment').value.trim();
+  ex.link=document.getElementById('editExLink').value.trim();
   saveLibrary(lib); closeModal('modalEditEx');
   currentLibTab=ex.body;
   const tabIdx=ex.body==='upper'?0:ex.body==='lower'?1:2;
@@ -1278,10 +1282,10 @@ function importExcel(event){
       if(wsLib){
         const libRows=XLSX.utils.sheet_to_json(wsLib,{header:1}).slice(1).filter(r=>r[0]&&r[1]);
         libRows.forEach(row=>{
-          const [id,name,bodyLabel,muscle,tip,comment]=row;
-          if(lib.find(e=>e.id===id)) return; // 이미 있으면 스킵
+          const [id,name,bodyLabel,muscle,tip,comment,link]=row;
+          if(lib.find(e=>e.id===id)) return;
           const body=bodyLabel==='하체'?'lower':bodyLabel==='유산소'?'cardio':'upper';
-          lib.push({id:String(id),name:String(name),body,muscle:muscle||'',tip:tip||'',comment:comment||''});
+          lib.push({id:String(id),name:String(name),body,muscle:muscle||'',tip:tip||'',comment:comment||'',link:link||''});
           newExCount++;
         });
       }
@@ -1380,8 +1384,8 @@ function exportExcel(){
   XLSX.utils.book_append_sheet(wb,ws1,'운동기록');
 
   // 시트2: 라이브러리
-  const libRows=[['ID','운동이름','분류','근육','팁','코멘트']];
-  lib.forEach(e=>libRows.push([e.id,e.name,e.body==='upper'?'상체':e.body==='lower'?'하체':'유산소',e.muscle,e.tip||'',e.comment||'']));
+  const libRows=[['ID','운동이름','분류','근육','팁','코멘트','링크']];
+  lib.forEach(e=>libRows.push([e.id,e.name,e.body==='upper'?'상체':e.body==='lower'?'하체':'유산소',e.muscle,e.tip||'',e.comment||'',e.link||'']));
   const ws2=XLSX.utils.aoa_to_sheet(libRows);
   ws2['!cols']=[18,20,8,10,24,24].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws2,'라이브러리');
