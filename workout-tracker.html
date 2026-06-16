@@ -1177,12 +1177,15 @@ function renderStats(){
   for(let d=1;d<=lastDate;d++){
     const key=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const hasRecord=!!allRec[key];
+    const hasCardio=hasRecord&&Object.entries(allRec[key].exercises).some(([eid,v])=>!Array.isArray(v));
     const dow=(firstDay+d-1)%7;
     const isToday=key===dateKey(new Date());
+    const size=hasRecord?(hasCardio?'90%':'65%'):'auto';
     calHtml+=`<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:12px;font-weight:${hasRecord?'700':'400'};
       background:${hasRecord?'var(--accent)':isToday?'var(--surface2)':'none'};
       color:${hasRecord?'#000':isToday?'var(--text)':dow===0?'#ef4444':dow===6?'#0ea5e9':'var(--text2)'};
-      border:${isToday&&!hasRecord?'1px solid var(--border)':'none'}">${d}</div>`;
+      border:${isToday&&!hasRecord?'1px solid var(--border)':'none'};
+      width:${size};margin:auto">${d}</div>`;
   }
   calHtml+=`</div></div>`;
   calEl.innerHTML=calHtml;
