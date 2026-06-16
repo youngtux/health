@@ -602,14 +602,14 @@ function renderLibrary(){
           <div style="flex:1;min-width:0">
             <div class="lib-item-name">${e.name}</div>
             ${e.tip?`<div class="lib-item-tip">💡 ${e.tip}</div>`:''}
-            ${e.comment?`<div class="lib-item-tip" style="color:var(--success,#00e5a0);margin-top:3px">📝 ${e.comment}</div>`:''}
           </div>
           <div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px">
             <button class="lib-delete-btn" style="color:var(--text2)" onclick="openEditExModal('${e.id}')">✏️</button>
             <button class="lib-delete-btn" onclick="deleteLibEx('${e.id}')">🗑</button>
           </div>
         </div>
-        <div id="media-${e.id}" style="margin-top:8px"></div>
+        ${e.comment?`<div class="lib-item-tip" style="color:var(--success,#00e5a0);margin-top:3px;width:100%">📝 ${e.comment}</div>`:''}
+        <div id="media-${e.id}" style="margin-top:8px;width:100%"></div>
       </div>`).join('')}`).join('');
   // 미디어 로딩
   lib.forEach(e=>loadExMedia(e.id, e.name));
