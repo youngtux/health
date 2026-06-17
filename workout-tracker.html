@@ -80,11 +80,11 @@
   .date-display{font-weight:700;font-size:15px;}
   .select-ex-btn{width:100%;background:var(--surface2);border:1px dashed var(--border);color:var(--text2);border-radius:12px;padding:12px;font-size:14px;cursor:pointer;margin-bottom:12px;transition:all 0.2s;}
   .select-ex-btn:hover{border-color:var(--accent);color:var(--accent);}
-  .record-exercise{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;}
+  .record-exercise{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;padding:0 16px;}
   .rec-ex-header{padding:12px 14px;font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:space-between;}
   .rec-ex-tag{font-size:10px;background:var(--surface2);color:var(--text2);padding:2px 8px;border-radius:6px;}
   .rec-rm-btn{background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:2px 6px;}
-  .sets-container{padding:0 14px 12px;border-top:1px solid var(--border);}
+  .sets-container{padding:0 0 12px;border-top:1px solid var(--border);margin:0 -16px;padding-left:16px;padding-right:16px;}
   .set-row{display:grid;grid-template-columns:32px 1fr 1fr auto;gap:8px;align-items:center;padding:6px 0;}
   .set-num{font-size:12px;color:var(--text2);font-weight:600;}
   .set-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px;font-size:13px;font-family:'Inter',sans-serif;width:100%;text-align:center;}
@@ -182,7 +182,7 @@
 
   <!-- 설정 영역 -->
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
       <div style="display:flex;align-items:center;gap:10px">
         <span style="font-size:13px;font-weight:600">⏱ 인터벌 타이머</span>
         <div id="timerSetting" style="display:none;align-items:center;gap:6px">
@@ -194,15 +194,6 @@
         <span style="font-size:12px;color:var(--text2)" id="timerToggleLabel">OFF</span>
         <div id="timerToggle" onclick="toggleTimer()" style="width:40px;height:22px;border-radius:11px;background:var(--border);position:relative;cursor:pointer;transition:background 0.2s">
           <div id="timerThumb" style="width:18px;height:18px;border-radius:9px;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s"></div>
-        </div>
-      </label>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between">
-      <span style="font-size:13px;font-weight:600">📋 운동 정보 표시</span>
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-        <span style="font-size:12px;color:var(--text2)" id="infoToggleLabel">OFF</span>
-        <div id="infoToggle" onclick="toggleInfo()" style="width:40px;height:22px;border-radius:11px;background:var(--border);position:relative;cursor:pointer;transition:background 0.2s">
-          <div id="infoThumb" style="width:18px;height:18px;border-radius:9px;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s"></div>
         </div>
       </label>
     </div>
@@ -249,7 +240,7 @@
   <div id="monthCalendar" style="margin-bottom:16px"></div>
   <p class="sec">운동 균형 분석</p>
   <div id="balanceChart"></div>
-  <p class="sec">운동별 최고 무게</p>
+  <p class="sec">운동별 상세분석</p>
   <div id="prList"></div>
 </div>
 
@@ -420,6 +411,66 @@ function showPage(name,btn){
 }
 
 // ─────────────────────────────────────────
+// 공통 운동 카드 헤더 (라이브러리/루틴/기록에서 재사용)
+// scope: 카드가 쓰이는 화면 구분자 (lib/routine/record) - 같은 운동이 여러 화면에 동시에 존재할 수 있어 id 충돌 방지
+// ─────────────────────────────────────────
+function exCardHeader(ex, actionsHtml, opts){
+  opts=opts||{};
+  const scope=opts.scope||'x';
+  const uid=scope+'-'+ex.id;
+  const muscleLabel=ex.body==='cardio'?'유산소':ex.muscle;
+  const linkBtn=ex.link?`<button onclick="window.open('${ex.link}','_blank')" style="background:none;border:none;color:#0ea5e9;cursor:pointer;font-size:16px;padding:4px">🔗</button>`:'';
+  return `
+    <div class="ex-row" style="flex-direction:column;align-items:flex-start;cursor:pointer" onclick="toggleExCard('${uid}')">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+        <div style="flex:1;min-width:0">
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-detail">${muscleLabel}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:8px" onclick="event.stopPropagation()">
+          ${linkBtn}
+          ${actionsHtml}
+        </div>
+      </div>
+      <div id="excard-detail-${uid}" style="display:none;width:100%" onclick="event.stopPropagation()">
+        ${ex.tip?`<div class="ex-tip" style="margin-top:6px">💡 ${ex.tip}</div>`:''}
+        ${ex.comment?`<div class="ex-tip" style="color:var(--success,#00e5a0);margin-top:6px">📝 ${ex.comment}</div>`:''}
+        <div id="excard-media-${uid}" style="margin-top:8px;width:100%"></div>
+      </div>
+    </div>`;
+}
+
+function toggleExCard(uid){
+  const detail=document.getElementById('excard-detail-'+uid);
+  if(!detail) return;
+  const isOpen=detail.style.display!=='none';
+  detail.style.display=isOpen?'none':'block';
+  if(!isOpen){
+    const exId=uid.split('-').slice(1).join('-');
+    const lib=loadLibrary();
+    const ex=lib.find(e=>e.id===exId); if(!ex) return;
+    const media=document.getElementById('excard-media-'+uid);
+    if(media) loadMediaInto(media, ex.name);
+  }
+}
+
+function loadMediaInto(container, name){
+  if(!container||container.hasChildNodes()) return;
+  const vid=document.createElement('video');
+  vid.src='./images/'+encodeURIComponent(name)+'.mp4';
+  vid.controls=true; vid.playsInline=true;
+  vid.style.cssText='width:100%;border-radius:8px;display:block';
+  vid.oncanplay=function(){ if(!container.hasChildNodes()) container.appendChild(vid); };
+  vid.onerror=function(){
+    const img=document.createElement('img');
+    img.src='./images/'+encodeURIComponent(name)+'.jpg';
+    img.alt=name;
+    img.style.cssText='width:100%;border-radius:8px;display:block';
+    img.onload=function(){ if(!container.hasChildNodes()) container.appendChild(img); };
+  };
+}
+
+// ─────────────────────────────────────────
 // 루틴
 // ─────────────────────────────────────────
 let addToRoutineDayId=null, selectedForRoutine=[];
@@ -447,49 +498,14 @@ function renderRoutine(){
       </div>
       <div class="day-exercises">
         ${exs.length===0?'<div style="padding:10px 0;color:var(--text2);font-size:13px">운동을 추가해보세요</div>':''}
-        ${exs.map(ex=>`<div class="ex-row" style="flex-direction:column;align-items:flex-start">
-          <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
-            <div>
-              <div class="ex-name">${ex.name}</div>
-              <div class="ex-detail">${ex.muscle}</div>
-              ${ex.tip?`<div class="ex-tip">💡 ${ex.tip}</div>`:''}
-              ${ex.comment?`<div class="ex-tip" style="color:var(--success,#00e5a0)">📝 ${ex.comment}</div>`:''}
-            </div>
-            <div class="ex-actions">
-              <button class="log-btn" onclick="event.stopPropagation();goRecord('${ex.id}')">기록</button>
-              <button class="rm-btn" onclick="event.stopPropagation();removeFromRoutine(${day.id},'${ex.id}')">✕</button>
-            </div>
-          </div>
-          <div id="rmedia-${ex.id}" style="width:100%;margin-top:6px"></div>
-        </div>`).join('')}
+        ${exs.map(ex=>exCardHeader(ex, `
+          <button class="log-btn" onclick="goRecord('${ex.id}')">기록</button>
+          <button class="rm-btn" onclick="removeFromRoutine(${day.id},'${ex.id}')">✕</button>
+        `, {scope:'routine'})).join('')}
         <button class="add-ex-to-routine" onclick="openAddToRoutineModal(${day.id})">+ 운동 추가</button>
       </div>
     </div>`;
   }).join('');
-  // 루틴 미디어 로딩
-  routine.forEach(day=>{
-    day.exercises.forEach(eid=>{
-      const ex=lib.find(e=>e.id===eid); if(!ex) return;
-      loadRoutineMedia(ex.id, ex.name);
-    });
-  });
-}
-
-function loadRoutineMedia(id, name){
-  const container=document.getElementById('rmedia-'+id);
-  if(!container||container.hasChildNodes()) return;
-  const vid=document.createElement('video');
-  vid.src='./images/'+encodeURIComponent(name)+'.mp4';
-  vid.controls=true; vid.playsInline=true;
-  vid.style.cssText='width:100%;border-radius:8px;display:block';
-  vid.oncanplay=function(){ if(!container.hasChildNodes()) container.appendChild(vid); };
-  vid.onerror=function(){
-    const img=document.createElement('img');
-    img.src='./images/'+encodeURIComponent(name)+'.jpg';
-    img.alt=name;
-    img.style.cssText='width:100%;border-radius:8px;display:block';
-    img.onload=function(){ if(!container.hasChildNodes()) container.appendChild(img); };
-  };
 }
 
 function toggleDay(id){ document.getElementById('dc-'+id).classList.toggle('open'); }
@@ -598,52 +614,12 @@ function renderLibrary(){
   container.innerHTML=muscles.map(m=>`
     <div class="muscle-label">${m}</div>
     ${lib.filter(e=>e.muscle===m).map(e=>`
-      <div class="lib-item" style="align-items:flex-start;flex-direction:column;gap:0;cursor:pointer" onclick="toggleLibItem('${e.id}')">
-        <div style="display:flex;align-items:flex-start;width:100%">
-          <div style="flex:1;min-width:0">
-            <div class="lib-item-name">${e.name}</div>
-            ${e.tip?`<div class="lib-item-tip">💡 ${e.tip}</div>`:''}
-          </div>
-          <div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px">
-            ${e.link?`<button class="lib-delete-btn" style="color:#0ea5e9" onclick="event.stopPropagation();window.open('${e.link}','_blank')">🔗</button>`:''}
-            <button class="lib-delete-btn" style="color:var(--text2)" onclick="event.stopPropagation();openEditExModal('${e.id}')">✏️</button>
-            <button class="lib-delete-btn" onclick="event.stopPropagation();deleteLibEx('${e.id}')">🗑</button>
-          </div>
-        </div>
-        <div id="libdetail-${e.id}" style="display:none;width:100%">
-          ${e.comment?`<div class="lib-item-tip" style="color:var(--success,#00e5a0);margin-top:6px">📝 ${e.comment}</div>`:''}
-          <div id="media-${e.id}" style="margin-top:8px;width:100%"></div>
-        </div>
+      <div class="day-card" style="margin-bottom:6px;padding:0 16px">
+        ${exCardHeader(e, `
+          <button class="rm-btn" style="color:var(--text2);border-color:var(--border)" onclick="openEditExModal('${e.id}')">✏️</button>
+          <button class="rm-btn" onclick="deleteLibEx('${e.id}')">🗑</button>
+        `, {scope:'lib'})}
       </div>`).join('')}`).join('');
-}
-
-function toggleLibItem(id){
-  const detail=document.getElementById('libdetail-'+id);
-  if(!detail) return;
-  const isOpen=detail.style.display!=='none';
-  detail.style.display=isOpen?'none':'block';
-  if(!isOpen){
-    const lib=loadLibrary();
-    const ex=lib.find(e=>e.id===id); if(!ex) return;
-    loadExMedia(id, ex.name);
-  }
-}
-
-function loadExMedia(id, name){
-  const container=document.getElementById('media-'+id);
-  if(!container) return;
-  const vid=document.createElement('video');
-  vid.src='./images/'+encodeURIComponent(name)+'.mp4';
-  vid.controls=true; vid.playsInline=true;
-  vid.style.cssText='width:100%;border-radius:8px;display:block';
-  vid.oncanplay=function(){ if(!container.hasChildNodes()) container.appendChild(vid); };
-  vid.onerror=function(){
-    const img=document.createElement('img');
-    img.src='./images/'+encodeURIComponent(name)+'.jpg';
-    img.alt=name;
-    img.style.cssText='width:100%;border-radius:8px;display:block';
-    img.onload=function(){ if(!container.hasChildNodes()) container.appendChild(img); };
-  };
 }
 
 let editingExId=null;
@@ -729,21 +705,19 @@ function deleteLibEx(id){
 // 타이머 & 설정
 // ─────────────────────────────────────────
 let timerInterval=null;
-let timerOn=false, infoOn=false;
+let timerOn=false;
 
 function loadRecordSettings(){
   try{
     const s=JSON.parse(localStorage.getItem('recordSettings')||'{}');
     timerOn=s.timerOn||false;
-    infoOn=s.infoOn||false;
     document.getElementById('timerSeconds').value=s.timerSeconds||90;
     applyTimerToggleUI();
-    applyInfoToggleUI();
   }catch{}
 }
 
 function saveTimerSettings(){
-  const s={timerOn,infoOn,timerSeconds:Number(document.getElementById('timerSeconds').value)||90};
+  const s={timerOn,timerSeconds:Number(document.getElementById('timerSeconds').value)||90};
   localStorage.setItem('recordSettings',JSON.stringify(s));
 }
 
@@ -769,28 +743,6 @@ function applyTimerToggleUI(){
     label.textContent='OFF'; label.style.color='var(--text2)';
     setting.style.display='none';
     stopTimer();
-  }
-}
-
-function toggleInfo(){
-  infoOn=!infoOn;
-  applyInfoToggleUI();
-  saveTimerSettings();
-  renderRecord();
-}
-
-function applyInfoToggleUI(){
-  const tog=document.getElementById('infoToggle');
-  const thumb=document.getElementById('infoThumb');
-  const label=document.getElementById('infoToggleLabel');
-  if(infoOn){
-    tog.style.background='var(--accent)';
-    thumb.style.left='20px';
-    label.textContent='ON'; label.style.color='var(--accent)';
-  } else {
-    tog.style.background='var(--border)';
-    thumb.style.left='2px';
-    label.textContent='OFF'; label.style.color='var(--text2)';
   }
 }
 
@@ -836,16 +788,11 @@ function renderRecord(){
   container.innerHTML=recordExIds.map(eid=>{
     const ex=lib.find(e=>e.id===eid); if(!ex) return '';
     const isCardio=ex.body==='cardio';
+    const header=exCardHeader(ex, `<button class="rec-rm-btn" onclick="removeRecEx('${eid}')">✕</button>`, {scope:'record', showMuscleTag:true});
     if(isCardio){
       const saved=existing?.exercises[eid]||{duration:'',distance:'',incline:''};
       return `<div class="record-exercise">
-        <div class="rec-ex-header">
-          <span>${ex.name}</span>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span class="rec-ex-tag" style="background:#0ea5e920;color:#0ea5e9">유산소</span>
-            <button class="rec-rm-btn" onclick="removeRecEx('${eid}')">✕</button>
-          </div>
-        </div>
+        ${header}
         <div class="sets-container" id="sc-${sid(eid)}">
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:8px 0 4px">
             <div class="input-col-label">시간(분)</div>
@@ -875,18 +822,7 @@ function renderRecord(){
       }
     }
     return `<div class="record-exercise">
-      <div class="rec-ex-header">
-        <span>${ex.name}</span>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span class="rec-ex-tag">${ex.muscle}</span>
-          <button class="rec-rm-btn" onclick="removeRecEx('${eid}')">✕</button>
-        </div>
-      </div>
-      ${infoOn&&(ex.tip||ex.comment)?`<div style="padding:6px 14px;border-bottom:1px solid var(--border)">
-        ${ex.tip?`<div class="ex-tip">💡 ${ex.tip}</div>`:''}
-        ${ex.comment?`<div class="ex-tip" style="color:var(--success,#00e5a0)">📝 ${ex.comment}</div>`:''}
-      </div>`:''}
-      ${infoOn?`<div id="recmedia-${sid(eid)}" style="padding:0 14px 8px;border-bottom:1px solid var(--border)"></div>`:''}
+      ${header}
       <div class="sets-container" id="sc-${sid(eid)}">
         <div style="display:grid;grid-template-columns:32px 1fr 1fr auto;gap:8px;padding:4px 0 0">
           <div></div><div class="input-col-label">무게(kg)</div><div class="input-col-label">횟수</div><div></div>
@@ -896,25 +832,6 @@ function renderRecord(){
       </div>
     </div>`;
   }).filter(Boolean).join('');
-  // 운동 정보 on이면 미디어 로딩
-  if(infoOn){
-    recordExIds.forEach(eid=>{
-      const ex=lib.find(e=>e.id===eid); if(!ex) return;
-      const container=document.getElementById('recmedia-'+sid(eid)); if(!container) return;
-      const vid=document.createElement('video');
-      vid.src='./images/'+encodeURIComponent(ex.name)+'.mp4';
-      vid.controls=true; vid.playsInline=true;
-      vid.style.cssText='width:100%;border-radius:8px;display:block;margin-top:6px';
-      vid.oncanplay=function(){ if(!container.hasChildNodes()) container.appendChild(vid); };
-      vid.onerror=function(){
-        const img=document.createElement('img');
-        img.src='./images/'+encodeURIComponent(ex.name)+'.jpg';
-        img.alt=ex.name;
-        img.style.cssText='width:100%;border-radius:8px;display:block;margin-top:6px';
-        img.onload=function(){ if(!container.hasChildNodes()) container.appendChild(img); };
-      };
-    });
-  }
 }
 
 function removeRecEx(eid){ recordExIds=recordExIds.filter(id=>id!==eid); renderRecord(); }
@@ -1246,17 +1163,25 @@ function renderStats(){
       <div style="margin-top:12px;padding:10px 12px;background:var(--surface2);border-radius:8px;font-size:13px;color:var(--text)">${total>1?advice():'아직 이번 달 기록이 없어요'}</div>
     </div>`;
 
-  const pr={};
-  keys.forEach(k=>Object.entries(allRec[k].exercises).forEach(([eid,data])=>{
+  const exStats={};
+  monthKeys.forEach(k=>Object.entries(allRec[k].exercises).forEach(([eid,data])=>{
     if(!Array.isArray(data)) return;
+    if(!exStats[eid]) exStats[eid]={sets:0,maxWeight:0};
+    exStats[eid].sets+=data.length;
     const maxW=Math.max(...data.map(s=>Number(s.weight)||0));
-    if(maxW>0 && (!pr[eid]||maxW>pr[eid])) pr[eid]=maxW;
+    if(maxW>exStats[eid].maxWeight) exStats[eid].maxWeight=maxW;
   }));
   const prEl=document.getElementById('prList');
-  if(!Object.keys(pr).length){ prEl.innerHTML='<div class="empty-state"><p>아직 기록이 없어요</p></div>'; return; }
-  prEl.innerHTML=Object.entries(pr).sort((a,b)=>b[1]-a[1]).map(([eid,w])=>{
+  if(!Object.keys(exStats).length){ prEl.innerHTML='<div class="empty-state"><p>해당 월 기록이 없어요</p></div>'; return; }
+  prEl.innerHTML=Object.entries(exStats).sort((a,b)=>b[1].sets-a[1].sets).map(([eid,stat])=>{
     const ex=lib.find(e=>e.id===eid);
-    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between"><span style="font-size:14px;font-weight:500">${ex?ex.name:eid}</span><span style="font-size:16px;font-weight:800;color:var(--accent)">${w}kg</span></div>`;
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:14px;font-weight:500">${ex?ex.name:eid}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:16px;font-weight:800;color:var(--accent);width:50px;text-align:right;line-height:1;display:inline-block">${stat.sets}세트</span>
+        <span style="font-size:16px;font-weight:800;color:var(--accent);width:60px;text-align:right;line-height:1;display:inline-block">${stat.maxWeight}kg</span>
+      </div>
+    </div>`;
   }).join('');
 }
 
