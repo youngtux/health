@@ -598,23 +598,35 @@ function renderLibrary(){
   container.innerHTML=muscles.map(m=>`
     <div class="muscle-label">${m}</div>
     ${lib.filter(e=>e.muscle===m).map(e=>`
-      <div class="lib-item" style="align-items:flex-start;flex-direction:column;gap:0">
+      <div class="lib-item" style="align-items:flex-start;flex-direction:column;gap:0;cursor:pointer" onclick="toggleLibItem('${e.id}')">
         <div style="display:flex;align-items:flex-start;width:100%">
           <div style="flex:1;min-width:0">
             <div class="lib-item-name">${e.name}</div>
             ${e.tip?`<div class="lib-item-tip">💡 ${e.tip}</div>`:''}
           </div>
           <div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px">
-            ${e.link?`<button class="lib-delete-btn" style="color:#0ea5e9" onclick="window.open('${e.link}','_blank')">🔗</button>`:''}
-            <button class="lib-delete-btn" style="color:var(--text2)" onclick="openEditExModal('${e.id}')">✏️</button>
-            <button class="lib-delete-btn" onclick="deleteLibEx('${e.id}')">🗑</button>
+            ${e.link?`<button class="lib-delete-btn" style="color:#0ea5e9" onclick="event.stopPropagation();window.open('${e.link}','_blank')">🔗</button>`:''}
+            <button class="lib-delete-btn" style="color:var(--text2)" onclick="event.stopPropagation();openEditExModal('${e.id}')">✏️</button>
+            <button class="lib-delete-btn" onclick="event.stopPropagation();deleteLibEx('${e.id}')">🗑</button>
           </div>
         </div>
-        ${e.comment?`<div class="lib-item-tip" style="color:var(--success,#00e5a0);margin-top:3px;width:100%">📝 ${e.comment}</div>`:''}
-        <div id="media-${e.id}" style="margin-top:8px;width:100%"></div>
+        <div id="libdetail-${e.id}" style="display:none;width:100%">
+          ${e.comment?`<div class="lib-item-tip" style="color:var(--success,#00e5a0);margin-top:6px">📝 ${e.comment}</div>`:''}
+          <div id="media-${e.id}" style="margin-top:8px;width:100%"></div>
+        </div>
       </div>`).join('')}`).join('');
-  // 미디어 로딩
-  lib.forEach(e=>loadExMedia(e.id, e.name));
+}
+
+function toggleLibItem(id){
+  const detail=document.getElementById('libdetail-'+id);
+  if(!detail) return;
+  const isOpen=detail.style.display!=='none';
+  detail.style.display=isOpen?'none':'block';
+  if(!isOpen){
+    const lib=loadLibrary();
+    const ex=lib.find(e=>e.id===id); if(!ex) return;
+    loadExMedia(id, ex.name);
+  }
 }
 
 function loadExMedia(id, name){
