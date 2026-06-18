@@ -229,14 +229,18 @@
 
 <!-- 통계 -->
 <div id="page-stats" class="page">
+  <div class="lib-tabs" style="margin-bottom:14px">
+    <button class="lib-tab active" id="statsTabWeek" onclick="switchStatsPeriod('week',this)">주간</button>
+    <button class="lib-tab" id="statsTabMonth" onclick="switchStatsPeriod('month',this)">월간</button>
+  </div>
   <div class="date-selector" style="margin-bottom:16px">
-    <button class="date-nav-btn" onclick="changeStatsMonth(-1)">&#8249;</button>
+    <button class="date-nav-btn" onclick="changeStatsPeriod(-1)">&#8249;</button>
     <div class="date-display" id="statsMonthDisplay"></div>
-    <button class="date-nav-btn" onclick="changeStatsMonth(1)">&#8250;</button>
+    <button class="date-nav-btn" onclick="changeStatsPeriod(1)">&#8250;</button>
   </div>
   <p class="sec">현황</p>
   <div class="stats-grid" id="statsGrid"></div>
-  <p class="sec">달력</p>
+  <p class="sec" id="calendarSecTitle">달력</p>
   <div id="monthCalendar" style="margin-bottom:16px"></div>
   <p class="sec">운동 균형 분석</p>
   <div id="balanceChart"></div>
@@ -1070,62 +1074,115 @@ function deleteRecord(key){
 // 통계
 // ─────────────────────────────────────────
 let statsMonth=new Date();
+let statsPeriod='week'; // 'week' or 'month'
 
-function changeStatsMonth(delta){
-  statsMonth=new Date(statsMonth.getFullYear(), statsMonth.getMonth()+delta, 1);
+function switchStatsPeriod(period, btn){
+  statsPeriod=period;
+  document.querySelectorAll('#page-stats .lib-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
   renderStats();
+}
+
+function changeStatsPeriod(delta){
+  if(statsPeriod==='month'){
+    statsMonth=new Date(statsMonth.getFullYear(), statsMonth.getMonth()+delta, 1);
+  } else {
+    statsMonth=new Date(statsMonth.getFullYear(), statsMonth.getMonth(), statsMonth.getDate()+delta*7);
+  }
+  renderStats();
+}
+
+function getWeekRange(d){
+  const sow=new Date(d); sow.setDate(d.getDate()-d.getDay());
+  const eow=new Date(sow); eow.setDate(sow.getDate()+6);
+  return {start:sow, end:eow};
 }
 
 function renderStats(){
   const allRec=loadRecords(), lib=loadLibrary(), keys=Object.keys(allRec);
   const now=statsMonth;
-  const monthStr=`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}`;
-  const isCurrentMonth=monthStr===new Date().toISOString().slice(0,7).replace('-','.');
+  let periodKeys, periodLabel;
 
-  // 월 표시
+  if(statsPeriod==='month'){
+    const monthPrefix=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    periodKeys=keys.filter(k=>k.startsWith(monthPrefix));
+    periodLabel=`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}`;
+  } else {
+    const {start,end}=getWeekRange(now);
+    periodKeys=keys.filter(k=>k>=dateKey(start)&&k<=dateKey(end));
+    const fmt=d=>`${d.getMonth()+1}/${d.getDate()}`;
+    periodLabel=`${fmt(start)} - ${fmt(end)}`;
+  }
+
   const el=document.getElementById('statsMonthDisplay');
-  if(el) el.textContent=monthStr;
+  if(el) el.textContent=periodLabel;
+  const calTitleEl=document.getElementById('calendarSecTitle');
+  if(calTitleEl) calTitleEl.textContent=statsPeriod==='month'?'달력':'이번 주';
 
-  const monthPrefix=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const monthKeys=keys.filter(k=>k.startsWith(monthPrefix));
-  const totalSetsMonth=monthKeys.reduce((s,k)=>s+Object.values(allRec[k].exercises).filter(v=>Array.isArray(v)).reduce((a,sets)=>a+sets.length,0),0);
+  const totalSetsPeriod=periodKeys.reduce((s,k)=>s+Object.values(allRec[k].exercises).filter(v=>Array.isArray(v)).reduce((a,sets)=>a+sets.length,0),0);
+  const periodLabelText=statsPeriod==='month'?'해당 월':'이번 주';
   document.getElementById('statsGrid').innerHTML=`
     <div class="stat-card"><div class="stat-value">${keys.length}</div><div class="stat-label">총 운동 횟수</div></div>
-    <div class="stat-card"><div class="stat-value">${monthKeys.length}</div><div class="stat-label">해당 월 운동</div></div>
-    <div class="stat-card"><div class="stat-value">${totalSetsMonth}</div><div class="stat-label">해당 월 총 세트</div></div>
+    <div class="stat-card"><div class="stat-value">${periodKeys.length}</div><div class="stat-label">${periodLabelText} 운동</div></div>
+    <div class="stat-card"><div class="stat-value">${totalSetsPeriod}</div><div class="stat-label">${periodLabelText} 총 세트</div></div>
     <div class="stat-card"><div class="stat-value">${calcStreak(allRec)}</div><div class="stat-label">🔥 연속 운동일</div></div>`;
-  // 월간 달력
+
+  // 달력 (월간) or 주간 히트맵
   const calEl=document.getElementById('monthCalendar');
-  const year=now.getFullYear(), month=now.getMonth();
-  const firstDay=new Date(year,month,1).getDay();
-  const lastDate=new Date(year,month+1,0).getDate();
-  const dn2=['일','월','화','수','목','금','토'];
-  let calHtml=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px">`;
-  calHtml+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px">`;
-  dn2.forEach((d,i)=>{ calHtml+=`<div style="text-align:center;font-size:11px;font-weight:700;color:${i===0?'#ef4444':i===6?'#0ea5e9':'var(--text2)'};padding:4px 0">${d}</div>`; });
-  calHtml+=`</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">`;
-  // 빈 칸
-  for(let i=0;i<firstDay;i++) calHtml+=`<div></div>`;
-  // 날짜
-  for(let d=1;d<=lastDate;d++){
-    const key=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const hasRecord=!!allRec[key];
-    const hasCardio=hasRecord&&Object.entries(allRec[key].exercises).some(([eid,v])=>!Array.isArray(v));
-    const dow=(firstDay+d-1)%7;
-    const isToday=key===dateKey(new Date());
-    const size=hasRecord?(hasCardio?'90%':'65%'):'auto';
-    calHtml+=`<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:12px;font-weight:${hasRecord?'700':'400'};
-      background:${hasRecord?'var(--accent)':isToday?'var(--surface2)':'none'};
-      color:${hasRecord?'#000':isToday?'var(--text)':dow===0?'#ef4444':dow===6?'#0ea5e9':'var(--text2)'};
-      border:${isToday&&!hasRecord?'1px solid var(--border)':'none'};
-      width:${size};margin:auto">${d}</div>`;
+  if(statsPeriod==='month'){
+    const year=now.getFullYear(), month=now.getMonth();
+    const firstDay=new Date(year,month,1).getDay();
+    const lastDate=new Date(year,month+1,0).getDate();
+    const dn2=['일','월','화','수','목','금','토'];
+    let calHtml=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px">`;
+    calHtml+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px">`;
+    dn2.forEach((d,i)=>{ calHtml+=`<div style="text-align:center;font-size:11px;font-weight:700;color:${i===0?'#ef4444':i===6?'#0ea5e9':'var(--text2)'};padding:4px 0">${d}</div>`; });
+    calHtml+=`</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">`;
+    for(let i=0;i<firstDay;i++) calHtml+=`<div></div>`;
+    for(let d=1;d<=lastDate;d++){
+      const key=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const hasRecord=!!allRec[key];
+      const hasCardio=hasRecord&&Object.entries(allRec[key].exercises).some(([eid,v])=>!Array.isArray(v));
+      const dow=(firstDay+d-1)%7;
+      const isToday=key===dateKey(new Date());
+      const size=hasRecord?(hasCardio?'90%':'65%'):'auto';
+      calHtml+=`<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:12px;font-weight:${hasRecord?'700':'400'};
+        background:${hasRecord?'var(--accent)':isToday?'var(--surface2)':'none'};
+        color:${hasRecord?'#000':isToday?'var(--text)':dow===0?'#ef4444':dow===6?'#0ea5e9':'var(--text2)'};
+        border:${isToday&&!hasRecord?'1px solid var(--border)':'none'};
+        width:${size};margin:auto">${d}</div>`;
+    }
+    calHtml+=`</div></div>`;
+    calEl.innerHTML=calHtml;
+  } else {
+    const {start}=getWeekRange(now);
+    const dn2=['일','월','화','수','목','금','토'];
+    let calHtml=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px">`;
+    calHtml+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">`;
+    for(let i=0;i<7;i++){
+      const d=new Date(start); d.setDate(start.getDate()+i);
+      const key=dateKey(d);
+      const hasRecord=!!allRec[key];
+      const hasCardio=hasRecord&&Object.entries(allRec[key].exercises).some(([eid,v])=>!Array.isArray(v));
+      const isToday=key===dateKey(new Date());
+      const size=hasRecord?(hasCardio?'90%':'65%'):'auto';
+      calHtml+=`<div style="text-align:center">
+        <div style="font-size:11px;font-weight:700;color:${i===0?'#ef4444':i===6?'#0ea5e9':'var(--text2)'};margin-bottom:6px">${dn2[i]}</div>
+        <div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:13px;font-weight:${hasRecord?'700':'400'};
+          background:${hasRecord?'var(--accent)':isToday?'var(--surface2)':'none'};
+          color:${hasRecord?'#000':isToday?'var(--text)':i===0?'#ef4444':i===6?'#0ea5e9':'var(--text2)'};
+          border:${isToday&&!hasRecord?'1px solid var(--border)':'none'};
+          width:${size};margin:0 auto">${d.getDate()}</div>
+      </div>`;
+    }
+    calHtml+=`</div></div>`;
+    calEl.innerHTML=calHtml;
   }
-  calHtml+=`</div></div>`;
-  calEl.innerHTML=calHtml;
+
   // 균형 분석
   const balanceEl=document.getElementById('balanceChart');
   const bodyCount={upper:0,lower:0,cardio:0};
-  monthKeys.forEach(k=>Object.entries(allRec[k].exercises).forEach(([eid,data])=>{
+  periodKeys.forEach(k=>Object.entries(allRec[k].exercises).forEach(([eid,data])=>{
     const ex=lib.find(e=>e.id===eid);
     const body=ex?.body||'upper';
     if(Array.isArray(data)) bodyCount[body]=(bodyCount[body]||0)+data.length;
@@ -1134,8 +1191,7 @@ function renderStats(){
   const total=Object.values(bodyCount).reduce((a,b)=>a+b,0)||1;
   const labels={upper:'상체',lower:'하체',cardio:'유산소'};
   const colors={upper:'#7c3aed',lower:'#f59e0b',cardio:'#0ea5e9'};
-  // 유산소 실제 분 합계
-  const cardioDuration=monthKeys.reduce((s,k)=>s+Object.entries(allRec[k].exercises)
+  const cardioDuration=periodKeys.reduce((s,k)=>s+Object.entries(allRec[k].exercises)
     .filter(([eid,v])=>!Array.isArray(v))
     .reduce((a,[,d])=>a+(Number(d.duration)||0),0),0);
   const advice=()=>{
@@ -1160,11 +1216,11 @@ function renderStats(){
           </div>
         </div>`;
       }).join('')}
-      <div style="margin-top:12px;padding:10px 12px;background:var(--surface2);border-radius:8px;font-size:13px;color:var(--text)">${total>1?advice():'아직 이번 달 기록이 없어요'}</div>
+      <div style="margin-top:12px;padding:10px 12px;background:var(--surface2);border-radius:8px;font-size:13px;color:var(--text)">${total>1?advice():'해당 기간 기록이 없어요'}</div>
     </div>`;
 
   const exStats={};
-  monthKeys.forEach(k=>Object.entries(allRec[k].exercises).forEach(([eid,data])=>{
+  periodKeys.forEach(k=>Object.entries(allRec[k].exercises).forEach(([eid,data])=>{
     if(!Array.isArray(data)) return;
     if(!exStats[eid]) exStats[eid]={sets:0,maxWeight:0};
     exStats[eid].sets+=data.length;
@@ -1172,7 +1228,7 @@ function renderStats(){
     if(maxW>exStats[eid].maxWeight) exStats[eid].maxWeight=maxW;
   }));
   const prEl=document.getElementById('prList');
-  if(!Object.keys(exStats).length){ prEl.innerHTML='<div class="empty-state"><p>해당 월 기록이 없어요</p></div>'; return; }
+  if(!Object.keys(exStats).length){ prEl.innerHTML='<div class="empty-state"><p>해당 기간 기록이 없어요</p></div>'; return; }
   prEl.innerHTML=Object.entries(exStats).sort((a,b)=>b[1].sets-a[1].sets).map(([eid,stat])=>{
     const ex=lib.find(e=>e.id===eid);
     return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
