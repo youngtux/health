@@ -395,7 +395,7 @@ function saveRecords(r){ localStorage.setItem('wkRecords',JSON.stringify(r)); }
 // ─────────────────────────────────────────
 // 유틸
 // ─────────────────────────────────────────
-function dateKey(d){ return d.toISOString().slice(0,10); }
+function dateKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function formatDate(d){ const dn=['일','월','화','수','목','금','토']; return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} (${dn[d.getDay()]})`; }
 function sid(n){ return n.replace(/[^a-zA-Z0-9가-힣]/g,'_'); }
 function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
@@ -1165,14 +1165,16 @@ function renderStats(){
       const hasRecord=!!allRec[key];
       const hasCardio=hasRecord&&Object.entries(allRec[key].exercises).some(([eid,v])=>!Array.isArray(v));
       const isToday=key===dateKey(new Date());
-      const size=hasRecord?(hasCardio?'90%':'65%'):'auto';
+      const size=hasRecord?(hasCardio?'90%':'65%'):'40%';
       calHtml+=`<div style="text-align:center">
         <div style="font-size:11px;font-weight:700;color:${i===0?'#ef4444':i===6?'#0ea5e9':'var(--text2)'};margin-bottom:6px">${dn2[i]}</div>
-        <div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:13px;font-weight:${hasRecord?'700':'400'};
-          background:${hasRecord?'var(--accent)':isToday?'var(--surface2)':'none'};
-          color:${hasRecord?'#000':isToday?'var(--text)':i===0?'#ef4444':i===6?'#0ea5e9':'var(--text2)'};
-          border:${isToday&&!hasRecord?'1px solid var(--border)':'none'};
-          width:${size};margin:0 auto">${d.getDate()}</div>
+        <div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center">
+          <div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:13px;font-weight:${hasRecord?'700':'400'};
+            background:${hasRecord?'var(--accent)':isToday?'var(--surface2)':'none'};
+            color:${hasRecord?'#000':isToday?'var(--text)':i===0?'#ef4444':i===6?'#0ea5e9':'var(--text2)'};
+            border:${isToday&&!hasRecord?'1px solid var(--border)':'none'};
+            width:${size};height:${size}">${d.getDate()}</div>
+        </div>
       </div>`;
     }
     calHtml+=`</div></div>`;
