@@ -1018,7 +1018,7 @@ function renderHistoryByExercise(){
       </div>
       <div class="hist-detail">
         <div class="hist-sets" style="padding:8px 0">
-          ${data.map((s,i)=>`<span class="hist-set-chip">S${i+1}: ${s.weight||'?'}kg × ${s.reps||'?'}회</span>`).join('')}
+          ${data.map((s,i)=>`<span class="hist-set-chip">S${i+1}: ${s.weight!==''&&s.weight!==undefined?s.weight:'?'}kg × ${s.reps!==''&&s.reps!==undefined?s.reps:'?'}회</span>`).join('')}
         </div>
       </div>
     </div>`;
@@ -1058,7 +1058,7 @@ function renderHistory(){
             if(data.incline) parts.push(`경사 ${data.incline}%`);
             return `<div class="hist-ex-row"><div class="hist-ex-name">🏃 ${name}</div><div class="hist-sets"><span class="hist-set-chip">${parts.join(' · ')||'-'}</span></div></div>`;
           }
-          return `<div class="hist-ex-row"><div class="hist-ex-name">${name}</div><div class="hist-sets">${data.map((s,i)=>`<span class="hist-set-chip">S${i+1}: ${s.weight||'?'}kg × ${s.reps||'?'}회</span>`).join('')}</div></div>`;
+          return `<div class="hist-ex-row"><div class="hist-ex-name">${name}</div><div class="hist-sets">${data.map((s,i)=>`<span class="hist-set-chip">S${i+1}: ${s.weight!==''&&s.weight!==undefined?s.weight:'?'}kg × ${s.reps!==''&&s.reps!==undefined?s.reps:'?'}회</span>`).join('')}</div></div>`;
         }).join('')}
       </div>
     </div>`;
