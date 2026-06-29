@@ -886,6 +886,7 @@ function setRowHTML(exId,idx,weight='',reps=''){
 }
 
 function addSet(exId){
+  saveRecordSilently();
   const c=document.getElementById('sc-'+sid(exId));
   const rows=c.querySelectorAll('.set-row'), addBtn=c.querySelector('.add-set-btn');
   let weight='', reps='';
@@ -914,8 +915,7 @@ function changeDate(delta){
   currentDate=d; recordExIds=[]; renderRecord();
 }
 
-function saveRecord(){
-  if(!recordExIds.length){ showToast('운동을 선택해주세요!'); return; }
+function collectRecordData(){
   const lib=loadLibrary();
   const exercises={}; let hasData=false;
   recordExIds.forEach(eid=>{
@@ -931,11 +931,25 @@ function saveRecord(){
       c.querySelectorAll('.set-row').forEach(row=>{
         const w=row.querySelector('[data-type="weight"]')?.value||'';
         const r=row.querySelector('[data-type="reps"]')?.value||'';
-        if(w||r){ sets.push({weight:w?Number(w):'',reps:r?Number(r):''}); hasData=true; }
+        if(w!==''||r!==''){ sets.push({weight:w!==''?Number(w):'',reps:r!==''?Number(r):''}); hasData=true; }
       });
       if(sets.length) exercises[eid]=sets;
     }
   });
+  return {exercises, hasData};
+}
+
+function saveRecordSilently(){
+  if(!recordExIds.length) return;
+  const {exercises, hasData}=collectRecordData();
+  if(!hasData) return;
+  const allRec=loadRecords(); allRec[dateKey(currentDate)]={date:dateKey(currentDate),exercises};
+  saveRecords(allRec); updateStreak();
+}
+
+function saveRecord(){
+  if(!recordExIds.length){ showToast('운동을 선택해주세요!'); return; }
+  const {exercises, hasData}=collectRecordData();
   if(!hasData){ showToast('데이터를 입력해주세요!'); return; }
   const allRec=loadRecords(); allRec[dateKey(currentDate)]={date:dateKey(currentDate),exercises};
   saveRecords(allRec); updateStreak(); showToast('✅ 저장 완료!');
