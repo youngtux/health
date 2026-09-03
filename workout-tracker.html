@@ -750,6 +750,29 @@ function applyTimerToggleUI(){
   }
 }
 
+let audioCtx=null;
+
+function getAudioCtx(){
+  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playBeep(){
+  try{
+    const ctx=getAudioCtx();
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value=880;
+    osc.type='sine';
+    gain.gain.setValueAtTime(0.8,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.6);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime+0.6);
+  }catch(e){}
+}
+
 function startTimer(container){
   if(!timerOn) return;
   stopTimer();
@@ -761,7 +784,7 @@ function startTimer(container){
   timerInterval=setInterval(()=>{
     remaining--;
     updatePopupTimer(remaining);
-    if(remaining<=0){ stopTimer(); showToast('⏱ 인터벌 완료!'); }
+    if(remaining<=0){ stopTimer(); playBeep(); showToast('⏱ 인터벌 완료!'); }
   },1000);
 }
 
@@ -887,6 +910,7 @@ function setRowHTML(exId,idx,weight='',reps=''){
 
 function addSet(exId){
   saveRecordSilently();
+  getAudioCtx(); // 클릭 시점에 AudioContext 활성화
   const c=document.getElementById('sc-'+sid(exId));
   const rows=c.querySelectorAll('.set-row'), addBtn=c.querySelector('.add-set-btn');
   let weight='', reps='';
