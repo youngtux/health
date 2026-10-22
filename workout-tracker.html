@@ -18,7 +18,7 @@
     --bg:#0f0f13;--surface:#1a1a22;--surface2:#22222e;
     --accent:#c8ff00;--accent2:#7c3aed;
     --text:#f0f0f5;--text2:#8888aa;--border:#2e2e3e;
-    --danger:#ff4466;
+    --danger:#ff4466;--ptc:#ff8a3d;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;}
@@ -180,6 +180,17 @@
     <button class="date-nav-btn" onclick="changeDate(1)">&#8250;</button>
   </div>
 
+  <!-- PT 받은 날 -->
+  <div onclick="togglePT()" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+    <span style="font-size:13px;font-weight:600">🧑‍🏫 PT 받은 날</span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span id="ptToggleLabel" style="font-size:12px;color:var(--text2)">OFF</span>
+      <div id="ptToggle" style="width:40px;height:22px;border-radius:11px;background:var(--border);position:relative;transition:background 0.2s">
+        <div id="ptThumb" style="width:18px;height:18px;border-radius:9px;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- 설정 영역 -->
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px">
     <div style="display:flex;align-items:center;justify-content:space-between">
@@ -242,6 +253,11 @@
   <div class="stats-grid" id="statsGrid"></div>
   <p class="sec" id="calendarSecTitle">달력</p>
   <div id="monthCalendar" style="margin-bottom:6px"></div>
+  <div style="display:flex;gap:14px;font-size:11px;color:var(--text2);margin-bottom:6px;flex-wrap:wrap">
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent);vertical-align:-1px"></span> 운동</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ptc);vertical-align:-1px"></span> PT</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid var(--ptc);vertical-align:-1px"></span> 운동 + PT</span>
+  </div>
   <div style="font-size:11px;color:var(--text2);margin-bottom:16px">💡 날짜를 누르면 해당 날짜의 기록 화면으로 이동해요</div>
   <p class="sec">볼륨 추이</p>
   <div id="volumeChart"></div>
@@ -281,7 +297,8 @@
     2. 세트별로 무게와 횟수를 입력하세요.<br>
     3. <strong style="color:var(--text)">+ 세트 추가</strong>를 누르면 이전 세트 값이 자동 복사돼요.<br>
     4. 유산소 운동은 시간/거리/경사를 입력하세요.<br>
-    5. 저장 버튼을 꼭 눌러야 기록이 저장돼요!
+    5. 저장 버튼을 꼭 눌러야 기록이 저장돼요!<br>
+    6. <strong style="color:var(--text)">PT 받은 날</strong> 토글을 켜면 그날이 PT 날로 표시돼요. (토글은 저장 버튼 없이 바로 저장)
   </div>
 
   <p class="sec">📈 통계 사용법</p>
@@ -289,7 +306,8 @@
     • 주간 / 월간 탭으로 기간을 바꿀 수 있어요.<br>
     • 달력에서 <strong style="color:var(--text)">날짜를 누르면</strong> 그날의 기록 화면으로 이동해요.<br>
     • <strong style="color:var(--text)">볼륨</strong> = 무게(kg) × 횟수의 합계예요. 근력 운동의 총 작업량을 보여줘요.<br>
-    • 볼륨 추이 그래프로 일별 볼륨을 한눈에 비교할 수 있어요.
+    • 볼륨 추이 그래프로 일별 볼륨을 한눈에 비교할 수 있어요.<br>
+    • 달력에서 <strong style="color:var(--ptc)">주황색</strong>은 PT 받은 날, 연두색 원의 주황 테두리는 운동 + PT를 함께 한 날이에요.
   </div>
 
   <p class="sec">📦 백업 & 복원</p>
@@ -299,7 +317,8 @@
     백업 파일에는 아래 3가지가 모두 포함돼요:<br>
     • <strong style="color:var(--text)">운동기록</strong> — 날짜별 세트/무게/횟수<br>
     • <strong style="color:var(--text)">라이브러리</strong> — 등록된 운동 목록<br>
-    • <strong style="color:var(--text)">루틴</strong> — 루틴 구성 정보<br><br>
+    • <strong style="color:var(--text)">루틴</strong> — 루틴 구성 정보<br>
+    • <strong style="color:var(--text)">PT</strong> — PT 받은 날짜<br><br>
     복원할 때는 히스토리 탭 → 📂 업로드 버튼을 누르면 돼요.
   </div>
 
@@ -392,6 +411,7 @@
 // 기본 데이터
 // ─────────────────────────────────────────
 const ROUTINE_COLORS=['#7c3aed','#0ea5e9','#f59e0b','#10b981','#ef4444','#ec4899','#14b8a6','#f97316'];
+const PT_COLOR='#ff8a3d'; // PT 받은 날 표시 색상
 
 // ─────────────────────────────────────────
 // Storage
@@ -402,6 +422,8 @@ function loadRoutine(){ try{ return JSON.parse(localStorage.getItem('myRoutine')
 function saveRoutine(r){ localStorage.setItem('myRoutine',JSON.stringify(r)); }
 function loadRecords(){ try{ return JSON.parse(localStorage.getItem('wkRecords')||'{}'); }catch{ return {}; } }
 function saveRecords(r){ localStorage.setItem('wkRecords',JSON.stringify(r)); }
+function loadPT(){ try{ return JSON.parse(localStorage.getItem('ptDays')||'[]'); }catch{ return []; } }
+function savePT(a){ localStorage.setItem('ptDays',JSON.stringify(a)); }
 
 // ─────────────────────────────────────────
 // 유틸
@@ -823,6 +845,7 @@ let currentDate=new Date(), recordExIds=[], modalExIds=[];
 
 function renderRecord(){
   document.getElementById('dateDisplay').textContent=formatDate(currentDate);
+  renderPTToggle();
   const key=dateKey(currentDate), allRec=loadRecords(), existing=allRec[key], lib=loadLibrary();
   if(existing && recordExIds.length===0) recordExIds=[...Object.keys(existing.exercises)];
   const container=document.getElementById('recordExercises');
@@ -1007,6 +1030,26 @@ function goRecord(exId){
   renderRecord();
 }
 
+// PT 받은 날 토글 (현재 선택된 날짜 기준, 즉시 저장)
+function renderPTToggle(){
+  const on=loadPT().includes(dateKey(currentDate));
+  const tog=document.getElementById('ptToggle'), thumb=document.getElementById('ptThumb'), label=document.getElementById('ptToggleLabel');
+  if(!tog) return;
+  tog.style.background=on?PT_COLOR:'var(--border)';
+  thumb.style.left=on?'20px':'2px';
+  label.textContent=on?'PT 받음':'OFF';
+  label.style.color=on?PT_COLOR:'var(--text2)';
+}
+function togglePT(){
+  const k=dateKey(currentDate);
+  let list=loadPT();
+  const was=list.includes(k);
+  list=was?list.filter(x=>x!==k):[...list,k];
+  list.sort(); savePT(list);
+  renderPTToggle();
+  showToast(was?'PT 표시를 해제했어요':'🧑‍🏫 PT 받은 날로 표시했어요');
+}
+
 // 통계 달력에서 날짜 선택 → 해당 날짜의 기록 화면으로 이동
 function goRecordDate(key){
   stopTimer();
@@ -1189,6 +1232,7 @@ function getPeriodKeys(keys, base, period, offset){
 
 function renderStats(){
   const allRec=loadRecords(), lib=loadLibrary(), keys=Object.keys(allRec);
+  const ptList=loadPT(), ptSet=new Set(ptList);
   const now=statsMonth;
   let periodKeys, periodLabel;
 
@@ -1229,7 +1273,9 @@ function renderStats(){
     <div class="stat-card"><div class="stat-value">${totalSetsPeriod}</div><div class="stat-label">${periodLabelText} 총 세트</div></div>
     <div class="stat-card"><div class="stat-value">${calcStreak(allRec)}</div><div class="stat-label">🔥 연속 운동일</div></div>
     <div class="stat-card"><div class="stat-value" style="font-size:24px">${fmtVol(periodVolume)}<span style="font-size:13px;font-weight:600;margin-left:2px">kg</span></div><div class="stat-label">${periodLabelText} 총 볼륨 (무게×횟수)</div></div>
-    <div class="stat-card"><div class="stat-value" style="color:${deltaColor}">${deltaText}</div><div class="stat-label">${prevLabelText} 대비 볼륨${prevVolume>0?` (${fmtVol(prevVolume)}kg)`:''}</div></div>`;
+    <div class="stat-card"><div class="stat-value" style="color:${deltaColor}">${deltaText}</div><div class="stat-label">${prevLabelText} 대비 볼륨${prevVolume>0?` (${fmtVol(prevVolume)}kg)`:''}</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:${PT_COLOR}">${getPeriodKeys(ptList, now, statsPeriod, 0).length}</div><div class="stat-label">🧑‍🏫 ${periodLabelText} PT 횟수</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:${PT_COLOR}">${ptList.length}</div><div class="stat-label">총 PT 횟수 (전체)</div></div>`;
 
   // 달력 (월간) or 주간 히트맵 — 날짜를 누르면 해당 날짜 기록 화면으로 이동
   const calEl=document.getElementById('monthCalendar');
@@ -1249,11 +1295,12 @@ function renderStats(){
       const hasCardio=hasRecord&&Object.entries(allRec[key].exercises).some(([eid,v])=>!Array.isArray(v));
       const dow=(firstDay+d-1)%7;
       const isToday=key===dateKey(new Date());
-      const size=hasRecord?(hasCardio?'90%':'65%'):'auto';
+      const isPT=ptSet.has(key);
+      const size=hasRecord?(hasCardio?'90%':'65%'):(isPT?'65%':'auto');
       calHtml+=`<div onclick="goRecordDate('${key}')" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:12px;font-weight:${hasRecord?'700':'400'};cursor:pointer;
-        background:${hasRecord?'var(--accent)':isToday?'var(--surface2)':'none'};
-        color:${hasRecord?'#000':isToday?'var(--text)':dow===0?'#ef4444':dow===6?'#0ea5e9':'var(--text2)'};
-        border:${isToday&&!hasRecord?'1px solid var(--border)':'none'};
+        background:${hasRecord?'var(--accent)':isPT?PT_COLOR:isToday?'var(--surface2)':'none'};
+        color:${hasRecord||isPT?'#000':isToday?'var(--text)':dow===0?'#ef4444':dow===6?'#0ea5e9':'var(--text2)'};
+        border:${isPT&&hasRecord?'3px solid '+PT_COLOR:(isToday&&!hasRecord&&!isPT?'1px solid var(--border)':'none')};
         width:${size};margin:auto">${d}</div>`;
     }
     calHtml+=`</div></div>`;
@@ -1269,14 +1316,15 @@ function renderStats(){
       const hasRecord=!!allRec[key];
       const hasCardio=hasRecord&&Object.entries(allRec[key].exercises).some(([eid,v])=>!Array.isArray(v));
       const isToday=key===dateKey(new Date());
-      const size=hasRecord?(hasCardio?'90%':'65%'):'40%';
+      const isPT=ptSet.has(key);
+      const size=hasRecord?(hasCardio?'90%':'65%'):(isPT?'65%':'40%');
       calHtml+=`<div style="text-align:center">
         <div style="font-size:11px;font-weight:700;color:${i===0?'#ef4444':i===6?'#0ea5e9':'var(--text2)'};margin-bottom:6px">${dn2[i]}</div>
         <div onclick="goRecordDate('${key}')" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;cursor:pointer">
           <div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:13px;font-weight:${hasRecord?'700':'400'};
-            background:${hasRecord?'var(--accent)':isToday?'var(--surface2)':'none'};
-            color:${hasRecord?'#000':isToday?'var(--text)':i===0?'#ef4444':i===6?'#0ea5e9':'var(--text2)'};
-            border:${isToday&&!hasRecord?'1px solid var(--border)':'none'};
+            background:${hasRecord?'var(--accent)':isPT?PT_COLOR:isToday?'var(--surface2)':'none'};
+            color:${hasRecord||isPT?'#000':isToday?'var(--text)':i===0?'#ef4444':i===6?'#0ea5e9':'var(--text2)'};
+            border:${isPT&&hasRecord?'3px solid '+PT_COLOR:(isToday&&!hasRecord&&!isPT?'1px solid var(--border)':'none')};
             width:${size};height:${size}">${d.getDate()}</div>
         </div>
       </div>`;
@@ -1505,11 +1553,27 @@ function importExcel(event){
         importedDays=[...new Set(recRows.map(r=>r[0]))].length;
       }
 
+      // ── PT 시트 복원 (없는 옛 백업은 건너뜀) ──
+      let newPT=0;
+      const wsPT=wb.Sheets['PT'];
+      if(wsPT){
+        const ptList=loadPT();
+        XLSX.utils.sheet_to_json(wsPT,{header:1}).slice(1).filter(r=>r[0]).forEach(r=>{
+          const v=r[0];
+          const ds=typeof v==='number'
+            ? new Date(Math.round((v-25569)*86400*1000)).toISOString().slice(0,10)
+            : String(v).trim();
+          if(!ptList.includes(ds)){ ptList.push(ds); newPT++; }
+        });
+        ptList.sort(); savePT(ptList);
+      }
+
       saveLibrary(lib); saveRoutine(routine); saveRecords(allRec); updateStreak();
       renderRoutine(); renderHistory();
       const msg=`✅ 불러오기 완료!${importedDays?` 기록 ${importedDays}일`:''}`+
                 `${newExCount?` · 운동 ${newExCount}개`:''}`+
-                `${newRoutineCount?` · 루틴 ${newRoutineCount}개`:''}`;
+                `${newRoutineCount?` · 루틴 ${newRoutineCount}개`:''}`+
+                `${newPT?` · PT ${newPT}일`:''}`;
       showToast(msg);
     } catch(err){
       showToast('파일을 읽는 중 오류가 났어요');
@@ -1564,6 +1628,13 @@ function exportExcel(){
   const ws3=XLSX.utils.aoa_to_sheet(routineRows);
   ws3['!cols']=[8,20,10,18,20].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws3,'루틴');
+
+  // 시트4: PT
+  const ptRows=[['PT날짜']];
+  loadPT().slice().sort().forEach(d=>ptRows.push([d]));
+  const ws4=XLSX.utils.aoa_to_sheet(ptRows);
+  ws4['!cols']=[{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws4,'PT');
 
   XLSX.writeFile(wb,`헬스백업_${dateKey(new Date())}.xlsx`);
   showToast('📊 전체 백업 완료!');
