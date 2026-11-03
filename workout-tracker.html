@@ -902,6 +902,7 @@ function renderRecord(){
 function removeRecEx(eid){ recordExIds=recordExIds.filter(id=>id!==eid); renderRecord(); }
 
 function openSelectExModal(){
+  saveRecordSilently(); // 선택 후 화면이 다시 그려져도 입력값이 유지되도록 현재 상태를 먼저 저장
   modalExIds=[...recordExIds];
   const lib=loadLibrary();
   const upper=lib.filter(e=>e.body==='upper'), lower=lib.filter(e=>e.body==='lower'), cardio=lib.filter(e=>e.body==='cardio');
